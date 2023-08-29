@@ -7,8 +7,11 @@ import {
   getDoc,
   addDoc,
   deleteDoc,
+  query,
+  where,
 } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useAuth } from "./AuthContext";
 
 const CitiesContext = createContext();
 
@@ -60,22 +63,31 @@ function CitiesProvider({ children }) {
     initialState
   );
 
-  useEffect(function () {
-    async function fetchCities() {
-      dispatch({ type: "loading" });
-      try {
-        const citiesSnapshot = await getDocs(collection(db, "cities"));
-        const cities = citiesSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        dispatch({ type: "cities/loaded", payload: cities });
-      } catch (e) {
-        dispatch({ type: "rejected", payload: "error in fetching cities" });
+  const { user } = useAuth();
+
+  useEffect(
+    function () {
+      async function fetchCities() {
+        dispatch({ type: "loading" });
+        try {
+          const q = query(
+            collection(db, "cities"),
+            where("uid", "==", user.uid)
+          );
+          const citiesSnapshot = await getDocs(q);
+          const cities = citiesSnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+          dispatch({ type: "cities/loaded", payload: cities });
+        } catch (e) {
+          dispatch({ type: "rejected", payload: "error in fetching cities" });
+        }
       }
-    }
-    fetchCities();
-  }, []);
+      fetchCities();
+    },
+    [user.uid]
+  );
 
   async function getCity(id) {
     dispatch({ type: "loading" });
@@ -91,8 +103,14 @@ function CitiesProvider({ children }) {
   async function createCity(newCity) {
     dispatch({ type: "loading" });
     try {
-      const refId = await addDoc(collection(db, "cities"), newCity);
-      dispatch({ type: "city/created", payload: { ...newCity, id: refId.id } });
+      const refId = await addDoc(collection(db, "cities"), {
+        ...newCity,
+        uid: user.uid,
+      });
+      dispatch({
+        type: "city/created",
+        payload: { ...newCity, id: refId.id, uid: user.uid },
+      });
     } catch (e) {
       dispatch({ type: "rejected", payload: "error in creating city..." });
     }

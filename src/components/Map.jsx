@@ -8,16 +8,26 @@ import {
   useMap,
   useMapEvents,
 } from "react-leaflet";
-import { useCities } from "../contexts/citiesContext";
+import { useCities } from "../contexts/CitiesContext";
 import { flagemojiToPNG } from "../utils";
 import { useNavigate } from "react-router-dom";
 import { useGeolocation } from "../hooks/useGeolocation";
 import Button from "./Button";
 import { useUrlPosition } from "../hooks/useUrlPosition";
 
+function findCenterOfCities(cities) {
+  if (cities.length === 0) return [40, 0];
+  const sumArr = [0.0, 0.0];
+  for (const city of cities) {
+    sumArr[0] += parseFloat(city.position.lat);
+    sumArr[1] += parseFloat(city.position.lng);
+  }
+  return [sumArr[0] / cities.length, sumArr[1] / cities.length];
+}
+
 function Map() {
   const { cities } = useCities();
-
+  const [mapLat, mapLng] = useUrlPosition();
   const [mapPosition, setMapPosition] = useState([40, 0]);
   const {
     isLoading: isLoadingPosition,
@@ -25,7 +35,12 @@ function Map() {
     getPosition,
   } = useGeolocation();
 
-  const [mapLat, mapLng] = useUrlPosition();
+  useEffect(
+    function () {
+      setMapPosition(findCenterOfCities(cities));
+    },
+    [cities]
+  );
 
   useEffect(
     function () {
@@ -33,7 +48,7 @@ function Map() {
         setMapPosition([mapLat, mapLng]);
       }
     },
-    [mapLat, mapLng]
+    [mapLat, mapLng, cities]
   );
 
   useEffect(
@@ -54,7 +69,7 @@ function Map() {
       )}
       <MapContainer
         center={mapPosition}
-        zoom={6}
+        zoom={5}
         scrollWheelZoom={true}
         className={styles.map}
       >
@@ -81,7 +96,12 @@ function Map() {
 
 function ChangeCenter({ position }) {
   const map = useMap();
-  map.setView(position);
+  useEffect(
+    function () {
+      map.setView(position);
+    },
+    [map, position]
+  );
   return null;
 }
 

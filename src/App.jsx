@@ -10,18 +10,31 @@ import CityList from "./components/CityList";
 import CountryList from "./components/CountryList";
 import City from "./components/City";
 import Form from "./components/Form";
-import { CitiesProvider } from "./contexts/citiesContext";
+import { CitiesProvider } from "./contexts/CitiesContext";
+import Signup from "./pages/Signup";
+import { AuthProvider } from "./contexts/AuthContext";
+import ProtectedRoute from "./pages/ProtectedRoute";
 
 function App() {
   return (
-    <CitiesProvider>
+    <AuthProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Homepage />} />
           <Route path="product" element={<Product />} />
           <Route path="pricing" element={<Pricing />} />
           <Route path="login" element={<Login />} />
-          <Route path="app" element={<AppLayout />}>
+          <Route path="signup" element={<Signup />} />
+          <Route
+            path="app"
+            element={
+              <ProtectedRoute>
+                <CitiesProvider>
+                  <AppLayout />
+                </CitiesProvider>
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<Navigate to="cities" replace />} />
             <Route path="cities" element={<CityList />} />
             <Route path="cities/:id" element={<City />} />
@@ -31,7 +44,7 @@ function App() {
           <Route path="*" element={<PageNotFound />} />
         </Routes>
       </BrowserRouter>
-    </CitiesProvider>
+    </AuthProvider>
   );
 }
 

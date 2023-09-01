@@ -1,4 +1,4 @@
-import { createContext, useContext, useReducer } from "react";
+import { createContext, useCallback, useContext, useReducer } from "react";
 import { db } from "../config/firebase";
 import {
   collection,
@@ -89,7 +89,7 @@ function CitiesProvider({ children }) {
     [user.uid]
   );
 
-  async function getCity(id) {
+  const getCity = useCallback(async function getCity(id) {
     dispatch({ type: "loading" });
     try {
       const docSnap = await getDoc(doc(db, "cities", id));
@@ -98,7 +98,7 @@ function CitiesProvider({ children }) {
     } catch (e) {
       dispatch({ type: "rejected", payload: "error in fetching city..." });
     }
-  }
+  }, []);
 
   async function createCity(newCity) {
     dispatch({ type: "loading" });
